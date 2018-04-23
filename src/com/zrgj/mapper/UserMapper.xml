@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace主要作用就是对sql的隔离,
+	但是对于代理方式的话,这个namespace是有特殊含义的
+		使用代理方式开发的话,这个namespace的值就是
+			Mapper接口的地址
+-->
+<mapper namespace="com.zrgj.mapper.UserMapper">
+	
+	<!-- 根据用户名查询用户 -->
+	<select id="getByUsername" parameterType="string" resultType="user">
+		select 
+			id,username,sex,brithday,address
+		from 
+			t_user
+		<where>
+			<if test="_parameter != null">
+				username = #{username}
+			</if>
+		</where>
+	</select>
+	
+	<!-- getByUsernameAndSex 根据用户名和性别查询用户-->
+	<select id="getByUsernameAndSex"  resultType="user">
+		select 
+			id,username,sex,brithday,address
+		from 
+			t_user
+		<where>
+			<if test="username != null">
+				and username = #{username} 
+			</if>
+			<if test="sex != null">
+				and sex = #{sex}
+			</if>
+		</where>
+	</select> 
+	
+	<!-- 根据一个实体bean去查询 -->
+	<select id="getUserByUserBean" parameterType="user" resultType="user">
+		select 
+			id,username,sex,brithday,address
+		from 
+			t_user
+		<where>
+			<if test="username != null">
+				and username = #{username} 
+			</if>
+			<if test="sex != null">
+				and	sex = #{sex}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据map来去查询用户 -->
+	<select id="getUserByMap" parameterType="map" resultType="user">
+		select 
+			id,username,sex,brithday,address
+		from 
+			t_user
+		<where>
+			<if test="username != null">
+				and username = #{username}
+			</if>
+			<if test="sex != null">
+				and	sex = #{sex}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据用户的id列表查询用户 -->
+	<select id="getUsersByIds" parameterType="list" resultType="user">
+		select 
+			id,username,sex,brithday,address
+		from 
+			t_user
+		where
+			id = #{list[0]}
+	</select>
+	
+	<!-- 根据用户的id列表查询用户(采用的是数组) -->
+	<select id="getUsersByIdsForArray" resultType="user">
+		select 
+			<include refid="user_columns"/>
+		from 
+			t_user
+		where
+			id = #{array[0]}
+	</select>
+	
+	<!-- 根据查询实体查询用户 -->
+	<select id="getUsersByQueryVo" parameterType="userQueryVo" resultType="user">
+		select 
+			<include refid="user_columns"/>
+		from 
+			t_user
+		<where>
+			<if test="user.username != null">
+				and username = #{user.username}
+			</if>
+			<if test="user.sex != null">
+				and sex = #{user.sex}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据查询条件查询总记录数 -->
+	<select id="getUsersCountByQueryVo" parameterType="userQueryVo" resultType="int">
+		select
+			<include refid="user_columns"/>
+		from
+			t_user
+		<where>
+			<if test="user.username != null">
+				and username = #{user.username}
+			</if>
+			<if test="user.sex != null">
+				and sex = #{user.sex}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 根据查询条件查询用户,演示的是返回的结果是Map -->
+	<select id="getUsersByQueryVoForResultTypeMap" parameterType="userQueryVo" resultType="map">
+		select
+			<include refid="user_columns"/>
+		from
+			t_user
+		<where>
+			<if test="user.username != null">
+				and username = #{user.username}
+			</if>
+			<if test="user.sex != null">
+				and sex = #{user.sex}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 自己去定义一个映射 ，就叫做ResultMap
+		id:就表示我相当于给这个自己定义的映射起了一个标识
+		type:
+	-->
+	<resultMap id="UserResultMap" type="user">
+	
+		<!-- 主键,指的就是数据库中表的唯一标识 -->
+		<id column="xxx" property="id"/>
+	
+		<!-- result映射的就是表中普通字段 -->
+		<result column="yyy" property="username"/>
+	</resultMap>
+	
+	<!-- 根据查询条件查询用户,演示的是返回的结果是resultMap -->
+	<select id="getUsersByQueryVoForResultMap" 
+			parameterType="userQueryVo" 
+			resultMap="UserResultMap">
+		select
+			id xxx,
+			username yyy
+		from
+			t_user
+			
+		<where>
+			<if test="user.username != null">
+				and username = #{user.username}
+			</if>
+			<if test="user.sex != null">
+				and sex = #{user.sex}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 		动态sql		-->
+	<!-- 根据查询实体查询用户信息 -->
+	<select id="getUsersByUserBeanForIf" parameterType="userQueryVo" resultType="user">
+		select
+			<include refid="user_columns"/>
+		from
+			t_user
+		<where>
+			<include refid="query_user_where"/>
+		</where>
+	</select>
+	
+	<!-- 根据用户查询实体查询用户总数 -->
+	<select id="getUsersCountByUserBeanForIf" parameterType="userQueryVo" resultType="int">
+		select
+			count(*)
+		from
+			t_user
+		<where>
+			<include refid="query_user_where"/>
+		</where>
+	</select>
+	
+	<!-- 动态sql之sql片段	where抽取 -->
+	<sql id="query_user_where">
+		<if test="user != null">
+			<if test="user.username != null">
+				and username = #{user.username}
+			</if>
+			<if test="user.sex != null">
+				and sex = #{user.sex}
+			</if>
+		</if>
+		<if test="ids != null">
+			<foreach collection="ids" item="user_id" open="and id in(" close=")" separator=",">
+				#{user_id}
+			</foreach>
+		</if>
+	</sql>
+	
+	<!-- 动态sql之sql片段  字段列表的抽取 -->
+	<sql id="user_columns">
+		id,username,sex,brithday,address
+	</sql>
+	
+	
+	<!-- 根据用户的id列表查询用户 -->
+	<select id="getUsersByIdsForEach" parameterType="userQueryVo" resultType="user">
+		select
+			<include refid="user_columns"/>
+		from
+			t_user
+		<where>
+			<include refid="query_user_where"/>
+		</where>		
+	</select>
+	
+	<!-- eache 遍历单个参数传递List集合 
+	<select id="getUsersByIdsForEach2" parameterType="list" resultType="user">
+		select
+			<include refid="user_columns"/>
+		from
+			t_user
+		<where>
+			<foreach collection="list" item="user_id" open="and id in(" close=")" separator=",">
+				#{user_id}
+			</foreach>
+		</where>
+	</select>-->
+	
+	<select id="getUsersByIdsForEach2" parameterType="list" resultType="user">
+		select
+			<include refid="user_columns"/>
+		from
+			t_user
+		<where>
+			<if test="list != null">
+				<foreach collection="list" item="user_id" open="and id in(" close=")" separator=",">
+					#{user_id}
+				</foreach>
+			</if>
+		</where>
+	</select>
+	
+	<!-- 批量添加用户 -->
+	<insert id="insertBatch" parameterType="list">
+		insert into
+			t_user(<include refid="user_columns"/>)
+		values
+			<foreach collection="list" item="user" separator=",">
+				(null,#{user.username},#{user.sex},#{user.brithday},#{user.address})	
+			</foreach>			
+	</insert>
+	
+	<!-- 根据用户名查询用户 -->
+	<select id="getUsersForChoose" parameterType="map" resultType="user">
+		select
+			<include refid="user_columns"/>
+		from
+			t_user
+		<where>
+			<choose>
+				<when test="username == 'JSP'">
+					sex = 'MAN'
+				</when>
+				<when test="username == 'Spring'">
+					sex = 'WOMAN'
+				</when>
+				<otherwise>
+					sex = 'oo'
+				</otherwise>
+			</choose>		
+		</where>		
+	</select>
+</mapper>
+
